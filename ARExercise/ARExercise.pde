@@ -3,6 +3,7 @@ import processing.video.*;
 
 final boolean MARKER_TRACKER_DEBUG = false;
 final boolean UFO_MOVE_DEBUG = true;
+final boolean BALL_DEBUG = true;
 
 final boolean USE_SAMPLE_IMAGE = true;
 
@@ -21,7 +22,7 @@ float fov = 45; // for camera capture
 
 // Marker codes to draw Models
 final int[] towardsList = {0x1C44, 0x1228, 0x005A};
-
+int towards = 0x1c44;
 final float GA = 9.80665;
 float verticalPosition = 0;
 float Position_x=0;
@@ -31,6 +32,10 @@ boolean left_key =false;
 boolean up_key = false;
 boolean down_key = false;
 
+PVector ballPos;
+float ballAngle = 25;
+float ballspeed = 0;
+int towardscnt = 0;   // if ball reached, +1 to change the target
 
 
 PVector snowmanLookVector;
@@ -130,6 +135,8 @@ void setup() {
   blueEyes = loadShape("BlueEyes/BlueEyes.obj");
   blueEyes.scale(0.0005);
   blueEyes.rotateX(3*PI/2);
+
+  ballPos = new PVector();  
 }
 
 
@@ -300,6 +307,96 @@ if (right!=null && right_key==true){
     }
 
   popMatrix();
+// The snowmen face each other
+  for (int i = 0; i < 2; i++) {
+    PMatrix3D pose_this = markerPoseMap.get(towardsList[i]);
+    PMatrix3D pose_look = markerPoseMap.get(towardsList[(i+1)%2]);
+
+    if (pose_this == null || pose_look == null)
+      break;
+
+    // float angle_monster = rotateToMarker(pose_this, pose_look, towardsList[i]);
+
+    
+    // pushMatrix();
+    //   applyMatrix(pose_this);
+    //   rotateZ(angle_monster-HALF_PI);
+    //   translate(verticalPosition,horizonPosition,0);
+    //   shape(blueEyes);
+    // popMatrix();
+
+    // pushMatrix();
+    //   // apply matrix (cf. drawSnowman.pde)
+    //   applyMatrix(pose_this);
+    //   rotateZ(angle_monster);
+      // draw snowman
+      // drawSnowman(snowmanSize);
+      pushMatrix();
+      // move ball
+      if (towardsList[i] == towards) {
+        pushMatrix();
+          PVector relativeVector = new PVector();
+          relativeVector.x = pose_look.m03 - pose_this.m03;
+          relativeVector.y = pose_look.m13 - pose_this.m13;
+          float relativeLen = relativeVector.mag();
+
+          ballspeed = sqrt(GA * relativeLen / sin(radians(ballAngle) * 2));
+          println(frameCnt);
+          println(relativeLen);
+          println(ballTotalFrame);
+          ballPos.x = frameCnt * relativeLen / ballTotalFrame;
+
+          float z_quad = GA * pow(ballPos.x, 2) / (2 * pow(ballspeed, 2) * pow(cos(radians(ballAngle)), 2));
+          ballPos.z = -tan(radians(ballAngle)) * ballPos.x + z_quad;
+          frameCnt++;
+
+          if (BALL_DEBUG)
+            println(ballPos, tan(radians(ballAngle)) * ballPos.x,  z_quad);
+
+          // for (int b =0;b<100;b++){
+          //   pushMatrix();
+          //     float position = random(0,1);
+          //     translate(ballPos.x+position*0.01, ballPos.y+position*0.01, ballPos.z - 0.025+position*0.1);
+          //     noStroke();
+          //     float ballcolor = random(10, 70);
+          //     fill(255, ballcolor, 0);
+          //     box(0.001);
+          //   popMatrix();
+          // }
+          pushMatrix();
+            translate(ballPos.x, ballPos.y, ballPos.z - 0.025);
+            noStroke();
+            fill(255, 255, 0);
+            sphere(0.003);
+          popMatrix();
+          
+
+          if (frameCnt == ballTotalFrame) {
+            ballPos = new PVector();
+            towardscnt++;
+            towards = towardsList[towardscnt % 2];
+            ballAngle = random(20, 70);
+            frameCnt = 0;
+
+            if (BALL_DEBUG)
+              println("towards:", hex(towards));
+          }
+        popMatrix();
+      }
+
+      noFill();
+      strokeWeight(3);
+      stroke(255, 0, 0);
+      line(0, 0, 0, 0.02, 0, 0); // draw x-axis
+      stroke(0, 255, 0);
+      line(0, 0, 0, 0, 0.02, 0); // draw y-axis
+      stroke(0, 0, 255);
+      line(0, 0, 0, 0, 0, 0.02); // draw z-axis
+    popMatrix();
+  }
+
+
+
 
   noLights();
   keyState.getKeyEvent();
