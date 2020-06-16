@@ -20,7 +20,7 @@ OpenCV opencv;
 float fov = 45; // for camera capture
 
 // Marker codes to draw Models
-final int[] towardsList = {0x1C44, 0x0272, 0x005A};
+final int[] towardsList = {0x1C44, 0x1228, 0x005A};
 
 final float GA = 9.80665;
 float verticalPosition = 0;
@@ -187,7 +187,7 @@ if (right!=null && right_key==true){
     Position_x = -0.03;
 }else if (up!=null && up_key==true){
     Position_y = -0.03;
-}else if (down!=null && down_key==true)
+}else if (down!=null && down_key==true){
     Position_y = 0.03;
 }else{
   Position_y=0;
@@ -282,8 +282,7 @@ if (right!=null && right_key==true){
     
   popMatrix();
   
-  
-
+ 
   // BlueEyes Model
   pushMatrix();
     if (posit3 != null){
